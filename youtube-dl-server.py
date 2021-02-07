@@ -16,27 +16,23 @@ app_defaults = {
     'YDL_EXTRACT_AUDIO_FORMAT': None,
     'YDL_EXTRACT_AUDIO_QUALITY': '192',
     'YDL_RECODE_VIDEO_FORMAT': None,
-    'YDL_OUTPUT_TEMPLATE': '/youtube-dl/%(title)s [%(id)s].%(ext)s',
+    'YDL_OUTPUT_TEMPLATE': '/youtube-dl/%(title)s.%(ext)s',
     'YDL_ARCHIVE_FILE': None,
     'YDL_SERVER_HOST': '0.0.0.0',
     'YDL_SERVER_PORT': 8080,
 }
 
-
 @app.route('/')
 def dl_queue_list():
     return static_file('index.html', root='./')
-
 
 @app.route('/static/:filename#.*#')
 def server_static(filename):
     return static_file(filename, root='./static')
 
-
 @app.route('/q', method='GET')
 def q_size():
     return {"success": True, "size": json.dumps(list(dl_q.queue))}
-
 
 @app.route('/q', method='POST')
 def q_put():
@@ -52,13 +48,11 @@ def q_put():
     print("Added url " + url + " to the download queue")
     return {"success": True, "url": url, "options": options}
 
-
 def dl_worker():
     while not done:
         url, options = dl_q.get()
         download(url, options)
         dl_q.task_done()
-
 
 def get_ydl_options(request_options):
     request_vars = {
@@ -99,11 +93,9 @@ def get_ydl_options(request_options):
         'download_archive': ydl_vars['YDL_ARCHIVE_FILE']
     }
 
-
 def download(url, request_options):
     with youtube_dl.YoutubeDL(get_ydl_options(request_options)) as ydl:
         ydl.download([url])
-
 
 dl_q = Queue()
 done = False
@@ -114,6 +106,6 @@ print("Started download thread")
 
 app_vars = ChainMap(os.environ, app_defaults)
 
-app.run(host=app_vars['YDL_SERVER_HOST'], port=app_vars['YDL_SERVER_PORT'], debug=True)
+app.run(host=app_vars['YDL_SERVER_HOST'], port=app_vars['YDL_SERVER_PORT'], debug=False)
 done = True
 dl_thread.join()
